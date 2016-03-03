@@ -3,7 +3,7 @@
 #include <iostream>
 //#include <cstring>
 #include <fftw3.h>
-#include <SFML/graphics.hpp>
+#include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <mutex>
 
@@ -21,7 +21,7 @@ class myRec : public sf::SoundRecorder
    struct sramples
    {
       sf::Int16 *samples;
-      std::size_t sampleCount;
+      int sampleCount;
    };
    sramples spamples;
    bool changed;
@@ -42,24 +42,29 @@ public:
 
       m.lock();
       spamples.samples = (sf::Int16*) samples;
-      spamples.sampleCount = sampleCount;
+      spamples.sampleCount = (int)sampleCount;
       changed = true;
       m.unlock();
 
       return true;
    }
 
-   int getSpamples(sf::Int16 array[], int n, int start)
+   int getSpamples(sf::Int16 array[], int n)
    {
       m.lock();
       if (changed)
       {
-         for (int i = 0; i < spamples.sampleCount; ++i)
-            array[(i+start)%n] = spamples.samples[i];
+         for (int i = 0; i < n; ++i)
+         {
+            if (i < n - spamples.sampleCount)
+               array[i] = array[i + spamples.sampleCount];
+            else
+               array[i] = spamples.samples[spamples.sampleCount - n + i];
+         }
          changed = false;
       }
       m.unlock();
-      return (spamples.sampleCount + start) %n;
+      return (spamples.sampleCount);
    }
 
    bool getChanged()
@@ -94,7 +99,7 @@ int main(int argc, char* argv[])
       //   argd[0] = argv[i];
       //   main(2, argd);
       //}
-      printf("Usage: ./soundwave <audiofile>\n");
+      printf("Usage: ./soundwave [audiofile]\n");
       return 1;
    }
    else if (argc < 2)
@@ -125,7 +130,6 @@ int main(int argc, char* argv[])
       int n = rate/15;
       int arr[n];
       double processed[n];
-      int offset = 0;
 
       //double factor = rate/1000.0;
 
@@ -137,11 +141,10 @@ int main(int argc, char* argv[])
       out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * n);
       plan = fftw_plan_dft_r2c_1d(n, in, out, FFTW_PATIENT);
       
-      int samplesSize = n*1.6;
+      int samplesSize = n;
       sf::Int16 samples[samplesSize];
       for (int i = 0; i < samplesSize; ++i)
          samples[i] = 0;
-      int current = 0;
 
       int i = 0;
 
@@ -161,8 +164,7 @@ int main(int argc, char* argv[])
 
          if (rec.getChanged())
          {
-            offset = current;
-            current = rec.getSpamples(samples, samplesSize, current);
+            rec.getSpamples(samples, samplesSize);
          }
          //else
          //   offset += n/4;
@@ -170,7 +172,7 @@ int main(int argc, char* argv[])
          //printf("%d\n", offset);
          for (i = 0; i < n; ++i)
          {
-            arr[i] = (int)samples[(samplesSize - i + offset)%(samplesSize)];
+            arr[i] = (int)samples[i];
             in[i] = (double)arr[i];
          }
          //cout << "Current: " << current << "\nOffset: " << offset << "\t" << offset + n << endl;
