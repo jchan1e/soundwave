@@ -9,7 +9,7 @@ LFLAGS=-L/usr/local/lib -lsfml-graphics -lsfml-audio -lsfml-window -lsfml-system
 CFLAGS=-Wall -g -O3 -std=c++11
 endif
 
-all: soundwave Soundwavelet
+all: soundwave# Soundwavelet
 
 soundwave:	soundwave.cpp
 	g++ $(CFLAGS) $^ -o $@ $(LFLAGS)
@@ -21,4 +21,4 @@ Soundwavelet: Soundwavelet.o
 	nvcc -ccbin g++ -std=c++11 -m64 -gencode arch=compute_52,code=sm_52 -g -G -O3 -o $@ $^ $(LFLAGS)
 
 clean:
-	rm soundwave Soundwavelet *.o
+	rm -r soundwave Soundwavelet *.o *.dSYM

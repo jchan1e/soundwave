@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
    {
       sf::ContextSettings settings;
       settings.antialiasingLevel = 0;
-      window.setFramerateLimit(60);
+      window.setVerticalSyncEnabled(true);
       
       myRec rec;
       if (!rec.isAvailable())
@@ -121,13 +121,13 @@ int main(int argc, char* argv[])
       //cout << rec.getDefaultDevice() << endl << rec.getDevice() << endl;
       rec.setDevice(rec.getAvailableDevices()[0]);
 
-      rec.start(44100);
+      rec.start(88200);
 
       int rate = rec.getSampleRate();
       printf("SampleRate: %d\n", rate);
       //const sf::Int16* samples = buffer.getSamples();
 
-      int n = rate/15;
+      int n = rate/12;
       int f = W;
       int arr[n];
       double processed[n];
@@ -186,7 +186,7 @@ int main(int argc, char* argv[])
             out[i][0] *= 2.0/n;
             out[i][1] *= 2.0/n;
             processed[i] = out[i][0]*out[i][0] + out[i][1]*out[i][1];
-            processed[i] = powf(processed[i], 1.0/2.5)/10;
+            processed[i] = powf(processed[i], 1.0/2.5)/10 * (i<pow(M_E, 3.0) ? 1 : log(pow((float)i, 1.0/3.0)));
 //            processed[i] = 10.0/log(10.0) * log(processed[i] + 1e-5);
             if (processed[i] < 0.0)
                processed[i] = 0.0;
@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
 //               processed[i] = 96.0;
          }
 
-         double A = 60.0/(rate/n);
+         double A = 40.0/(rate/n);
          double r = pow(20000.0/A*n/rate, 1.0/f);
          // n = A*r^f
          // 20000 = 20*r^1920
@@ -204,7 +204,7 @@ int main(int argc, char* argv[])
          {
             pre = A*pow(r, i+1);
             nex = A*pow(r, i+2);
-            //if (nex == pre) ++nex;
+            if (nex == pre) ++nex;
             display[i] = 0;
             //cout << i << ",\t" << pre << endl;
             for (int j = pre; j < nex; ++j)
