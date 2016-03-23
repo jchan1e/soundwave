@@ -210,7 +210,7 @@ int main(int argc, char* argv[])
             for (int j = pre; j < nex; ++j)
             {
                if (j < n)
-                  display[i] += processed[j];
+                  display[i] = max(display[i], processed[j]);
             }
          }
       //cout << f << endl;
