@@ -28,7 +28,7 @@ class myRec : public sf::SoundRecorder
    mutex m;
    
 public:
-   
+
    virtual bool onStart()
    {
       changed = false;
@@ -38,8 +38,6 @@ public:
 
    virtual bool onProcessSamples(const sf::Int16* samples, std::size_t sampleCount)
    {
-      //printf("%d\n", (int)sampleCount);
-
       m.lock();
       spamples.samples = (sf::Int16*) samples;
       spamples.sampleCount = (int)sampleCount;
@@ -107,7 +105,12 @@ int main(int argc, char* argv[])
       sf::ContextSettings settings;
       settings.antialiasingLevel = 0;
       window.setVerticalSyncEnabled(true);
-      
+
+      window.clear(sf::Color(0, 0, 0));
+      window.display();
+      window.clear(sf::Color(0, 0, 0));
+      window.display();
+
       myRec rec;
       if (!rec.isAvailable())
       {
@@ -158,8 +161,13 @@ int main(int argc, char* argv[])
          {
             if (event.type == sf::Event::Closed)
             {
+               rec.stop();
                window.close();
-               break;
+               fftw_destroy_plan(plan);
+               fftw_free(in);
+               fftw_free(out);
+
+               return EXIT_SUCCESS;
             }
          }
 
@@ -186,7 +194,8 @@ int main(int argc, char* argv[])
             out[i][0] *= 2.0/n;
             out[i][1] *= 2.0/n;
             processed[i] = out[i][0]*out[i][0] + out[i][1]*out[i][1];
-            processed[i] = powf(processed[i], 1.0/2.5)/10 * (i<pow(M_E, 3.0) ? 1 : log(pow((float)i, 1.0/3.0)));
+            //processed[i] = powf(processed[i], 1.0/2.0)/60 * (i<pow(M_E, 3.0) ? (0.1*((float)i - pow(M_E, 3.0)) + 1) : log(pow((float)i, 1.0/3.0)));
+            processed[i] = powf(processed[i], 1.0/2.0)/60 * (i<pow(M_E, 3.0) ? 1 : log(pow((float)i, 1.0/3.0)));
 //            processed[i] = 10.0/log(10.0) * log(processed[i] + 1e-5);
             if (processed[i] < 0.0)
                processed[i] = 0.0;
@@ -220,13 +229,11 @@ int main(int argc, char* argv[])
          draw_array(f, display);
          draw_wave(n, arr);
          window.display();
+         //draw_array(f, display);
+         //draw_wave(n, arr);
+         //window.display();
       }
 
-      fftw_destroy_plan(plan);
-      fftw_free(in);
-      fftw_free(out);
-
-      return EXIT_SUCCESS;
    }
    else //(argc == 2)
    {
@@ -392,9 +399,9 @@ void draw_array(int n, double arr[])
          line0[0] = sf::Vertex(sf::Vector2f(Q*i+j, S/3-(arr[i]*u)));
          line0[1] = sf::Vertex(sf::Vector2f(Q*i+j, S/3+(arr[i]*u/2)));
          line0[1].color = sf::Color (
-            min(abs(max(abs(((2*i/3) %1536)-768)-256,0)),255)*min(arr[i]/24.0, 1.0),
-            min(abs(max(abs(((2*i/3+1024) %1536)-768)-256,0)),255)*min(arr[i]/24.0, 1.0),
-            min(abs(max(abs(((2*i/3+512) %1536)-768)-256,0)),255)*min(arr[i]/24.0, 1.0));
+            min(abs(max(abs(((2*i/3) %1536)-768)-256,0)),255)*max(min(arr[i]/24.0, 1.0), 0.20),
+            min(abs(max(abs(((2*i/3+1024) %1536)-768)-256,0)),255)*max(min(arr[i]/24.0, 1.0), 0.20),
+            min(abs(max(abs(((2*i/3+512) %1536)-768)-256,0)),255)*max(min(arr[i]/24.0, 1.0), 0.20));
    //      line0[1].color = sf::Color::White;
          line0[0].color = line0[1].color;
 //         line0[0].color = sf::Color::Black;
