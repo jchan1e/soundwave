@@ -122,7 +122,9 @@ int main(int argc, char* argv[])
       for (int i = strang.size()-1; i >= 0; i--)
          cout << strang[i] << endl;
       //cout << rec.getDefaultDevice() << endl << rec.getDevice() << endl;
-      rec.setDevice(rec.getAvailableDevices()[0]);
+      int choice;
+      cin >> choice;
+      rec.setDevice(rec.getAvailableDevices()[choice]);
 
       rec.start(88200);
 
