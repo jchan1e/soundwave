@@ -210,7 +210,7 @@ int main(int argc, char* argv[])
             out[i][1] *= 2.0/n;
             processed[i] = out[i][0]*out[i][0] + out[i][1]*out[i][1];
             //processed[i] = powf(processed[i], 1.0/2.0)/60 * (i<pow(M_E, 3.0) ? (0.1*((float)i - pow(M_E, 3.0)) + 1) : log(pow((float)i, 1.0/3.0)));
-            processed[i] = powf(processed[i], 1.0/2.0)/60 * (i<pow(M_E, 3.0) ? 1 : log(pow((float)i, 1.0/3.0)));
+            processed[i] = powf(processed[i], 1.0/2.0)/60 * (i<pow(M_E, 3.0) ? 1 : log(pow((float)i, 1.0/2.0)));
 //            processed[i] = 10.0/log(10.0) * log(processed[i] + 1e-5);
             if (processed[i] < 0.0)
                processed[i] = 0.0;
@@ -243,8 +243,8 @@ int main(int argc, char* argv[])
 
          window->clear(sf::Color(0, 0, 0));
          
+         draw_wave((n-1)<f/2?(n-1):f/2, arr);
          draw_array(f, display);
-         draw_wave(n, arr);
          window->display();
          //draw_array(f, display);
          //draw_wave(n, arr);
@@ -388,8 +388,8 @@ int main(int argc, char* argv[])
       //cout << n << endl;
 
          window->clear(sf::Color(0, 0, 0, 12));
+         draw_wave((n-1)<f/2?(n-1):f/2, arr);
          draw_array(f, display);
-         draw_wave(n, arr);
          window->display();
       }
 
@@ -428,18 +428,18 @@ void draw_wave(int n, int arr[])
 
    //int u = 98304 / S;
    float u = (S/3.0)/(256.0*128.0);
-   for(i = 1; i < n; ++i)
+   for(i = 0; i < n; ++i)
    {
       //line0[2*i] = sf::Vertex(sf::Vector2f(2*(i-1), S-S/3.0));
       //line0[2*i+1] = sf::Vertex(sf::Vector2f(2*i, S-S/3.0));
-      line0[2*i] = sf::Vertex(sf::Vector2f(2*(i-1), S-S/3.0-(arr[i-1]*u)));
-      line0[2*i+1] = sf::Vertex(sf::Vector2f(2*i, S-S/3.0-(arr[i]*u)));
+      line0[2*i] = sf::Vertex(sf::Vector2f(2*i, S-S/3.0-(arr[i]*u)));
+      line0[2*i+1] = sf::Vertex(sf::Vector2f(2*(i+1), S-S/3.0-(arr[i+1]*u)));
    //   line0[1].color = sf::Color::Color (
    //      min(abs(max(abs(((2*arr[i]+512) %1536)-768)-256,0)),255),
    //      min(abs(max(abs(((2*arr[i]) %1536)-768)-256,0)),255),
    //      min(abs(max(abs(((2*arr[i]-512) %1536)-768)-256,0)),255));
-      line0[1].color = sf::Color::White;
-      line0[0].color = sf::Color::White;
+      line0[2*i].color = sf::Color::White;
+      line0[2*i+1].color = sf::Color::White;
 //      line0[0].color = sf::Color::Black;
    }
    window->draw(line0, 2*n, sf::Lines);//Strip);
@@ -474,9 +474,9 @@ void draw_array(int n, double arr[])
             min(abs(max(abs(((2*i/3+512) %1536)-768)-256,0)),255)*max(min(arr[i]/24.0, 1.0), 0.20));
    //      line0[1].color = sf::Color::White;
 //         line0[0].color = line0[1].color;
-         line0[2].color = line0[1].color;;
-         line0[0].color = line0[1].color;;
-         line0[3].color = sf::Color::Black;
+         line0[2].color = line0[1].color;
+         line0[0].color = sf::Color(0,0,0,0);
+         line0[3].color = sf::Color(0,0,0,0);
          //window->draw(line0, 2, sf::Lines);//Strip);
          //line0[0] = sf::Vertex(sf::Vector2f(2*Q*i+Q+j, S/3-(arr[i]*u)));
          //line0[0].color = line0[1].color;
