@@ -20,7 +20,7 @@ class myRec : public sf::SoundRecorder
 {
    struct sramples
    {
-      sf::Int16 *samples;
+      sf::Int16 *samples = NULL;
       int sampleCount;
    };
    sramples spamples;
@@ -39,8 +39,30 @@ public:
    virtual bool onProcessSamples(const sf::Int16* samples, std::size_t sampleCount)
    {
       m.lock();
-      spamples.samples = (sf::Int16*) samples;
-      spamples.sampleCount = (int)sampleCount;
+
+      if (changed)
+      {
+         sf::Int16* temp = spamples.samples;
+         spamples.sampleCount += sampleCount;
+         spamples.samples = (sf::Int16*)malloc(spamples.sampleCount*sizeof(sf::Int16));
+         int i = 0;
+         for (; i < spamples.sampleCount-sampleCount; ++i)
+            spamples.samples[i] = temp[i];
+         for (int j=0; i < spamples.sampleCount; ++i, ++j)
+            spamples.samples[i] = samples[j];
+         free(temp);
+      }
+
+      else
+      {
+         if (spamples.samples != NULL)
+            free(spamples.samples);
+         spamples.samples = (sf::Int16*)malloc(sampleCount*sizeof(sf::Int16));
+         spamples.sampleCount = (int)sampleCount;
+         for (int i=0; i < spamples.sampleCount; ++i)
+            spamples.samples[i] = samples[i];
+      }
+
       changed = true;
       m.unlock();
 
@@ -50,17 +72,14 @@ public:
    int getSpamples(sf::Int16 array[], int n)
    {
       m.lock();
-      if (changed)
+      for (int i = 0; i < n; ++i)
       {
-         for (int i = 0; i < n; ++i)
-         {
-            if (i < n - spamples.sampleCount)
-               array[i] = array[i + spamples.sampleCount];
-            else
-               array[i] = spamples.samples[spamples.sampleCount - n + i];
-         }
-         changed = false;
+         if (i < n - spamples.sampleCount)
+            array[i] = array[i + spamples.sampleCount];
+         else
+            array[i] = spamples.samples[spamples.sampleCount - n + i];
       }
+      changed = false;
       m.unlock();
       return (spamples.sampleCount);
    }
@@ -111,7 +130,7 @@ int main(int argc, char* argv[])
       }
 
       vector<string> strang = rec.getAvailableDevices();
-      for (int i = 0; i < strang.size(); ++i)
+      for (unsigned int i = 0; i < strang.size(); ++i)
          cout << strang[i] << endl;
       //cout << rec.getDefaultDevice() << endl << rec.getDevice() << endl;
       int choice = 0;
@@ -272,7 +291,8 @@ int main(int argc, char* argv[])
       sf::ContextSettings settings;
       settings.antialiasingLevel = 0;
       window = new sf::RenderWindow(sf::VideoMode(W, S), "SoundWave");
-      window->setFramerateLimit(60);
+      window->setVerticalSyncEnabled(true);
+      //window->setFramerateLimit(60);
 
       sf::SoundBuffer buffer;
       if (!buffer.loadFromFile(argv[1]))
@@ -469,9 +489,9 @@ void draw_array(int n, double arr[])
          line0[2] = sf::Vertex(sf::Vector2f(Q*i+j, S/3.0));
          line0[3] = sf::Vertex(sf::Vector2f(Q*i+j, S/3.0+(arr[i]*u/2)));
          line0[1].color = sf::Color (
-            min(abs(max(abs(((2*i/3) %1536)-768)-256,0)),255)*max(min(arr[i]/24.0, 1.0), 0.20),
-            min(abs(max(abs(((2*i/3+1024) %1536)-768)-256,0)),255)*max(min(arr[i]/24.0, 1.0), 0.20),
-            min(abs(max(abs(((2*i/3+512) %1536)-768)-256,0)),255)*max(min(arr[i]/24.0, 1.0), 0.20));
+            min(abs(max(abs(((2*i*1920/W/3) %1536)-768)-256,0)),255)*max(min(arr[i]/24.0, 1.0), 0.20),
+            min(abs(max(abs(((2*i*1920/W/3+1024) %1536)-768)-256,0)),255)*max(min(arr[i]/24.0, 1.0), 0.20),
+            min(abs(max(abs(((2*i*1920/W/3+512) %1536)-768)-256,0)),255)*max(min(arr[i]/24.0, 1.0), 0.20));
    //      line0[1].color = sf::Color::White;
 //         line0[0].color = line0[1].color;
          line0[2].color = line0[1].color;
