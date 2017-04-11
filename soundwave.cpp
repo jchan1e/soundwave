@@ -45,7 +45,7 @@ public:
          sf::Int16* temp = spamples.samples;
          spamples.sampleCount += sampleCount;
          spamples.samples = (sf::Int16*)malloc(spamples.sampleCount*sizeof(sf::Int16));
-         int i = 0;
+         unsigned int i = 0;
          for (; i < spamples.sampleCount-sampleCount; ++i)
             spamples.samples[i] = temp[i];
          for (int j=0; i < spamples.sampleCount; ++i, ++j)
@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
 
       vector<string> strang = rec.getAvailableDevices();
       for (unsigned int i = 0; i < strang.size(); ++i)
-         cout << strang[i] << endl;
+         cout << i << "\t" << strang[i] << endl;
       //cout << rec.getDefaultDevice() << endl << rec.getDevice() << endl;
       int choice = 0;
       if (strang.size() > 1)
