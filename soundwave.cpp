@@ -468,10 +468,11 @@ void draw_array(int n, double arr[])
          line0[1] = sf::Vertex(sf::Vector2f(Q*i+j, S/3.0));
          line0[2] = sf::Vertex(sf::Vector2f(Q*i+j, S/3.0));
          line0[3] = sf::Vertex(sf::Vector2f(Q*i+j, S/3.0+(arr[i]*u/2)));
+         float color_factor = 1920.0*3.0/4.0/W;
          line0[1].color = sf::Color (
-            min(abs(max(abs(((2*i/3) %1536)-768)-256,0)),255)*max(min(arr[i]/24.0, 1.0), 0.20),
-            min(abs(max(abs(((2*i/3+1024) %1536)-768)-256,0)),255)*max(min(arr[i]/24.0, 1.0), 0.20),
-            min(abs(max(abs(((2*i/3+512) %1536)-768)-256,0)),255)*max(min(arr[i]/24.0, 1.0), 0.20));
+            min(abs(max(abs(fmod((color_factor*i),1536)-768)-256,0.0)),255.0)*max(min(arr[i]/24.0, 1.0), 0.20),
+            min(abs(max(abs(fmod((color_factor*i+1024),1536)-768)-256,0.0)),255.0)*max(min(arr[i]/24.0, 1.0), 0.20),
+            min(abs(max(abs(fmod((color_factor*i+512),1536)-768)-256,0.0)),255.0)*max(min(arr[i]/24.0, 1.0), 0.20));
    //      line0[1].color = sf::Color::White;
 //         line0[0].color = line0[1].color;
          line0[2].color = line0[1].color;
