@@ -45,10 +45,10 @@ public:
          sf::Int16* temp = spamples.samples;
          spamples.sampleCount += sampleCount;
          spamples.samples = (sf::Int16*)malloc(spamples.sampleCount*sizeof(sf::Int16));
-         unsigned int i = 0;
-         for (; i < spamples.sampleCount-sampleCount; ++i)
+         int i = 0;
+         for (; i < spamples.sampleCount-int(sampleCount); ++i)
             spamples.samples[i] = temp[i];
-         for (unsigned int j=0; i < spamples.sampleCount; ++i, ++j)
+         for (int j=0; i < spamples.sampleCount; ++i, ++j)
             spamples.samples[i] = samples[j];
          free(temp);
       }
@@ -59,7 +59,7 @@ public:
             free(spamples.samples);
          spamples.samples = (sf::Int16*)malloc(sampleCount*sizeof(sf::Int16));
          spamples.sampleCount = (int)sampleCount;
-         for (unsigned int i=0; i < spamples.sampleCount; ++i)
+         for (int i=0; i < spamples.sampleCount; ++i)
             spamples.samples[i] = samples[i];
       }
 
