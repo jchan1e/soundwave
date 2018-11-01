@@ -102,7 +102,8 @@ public:
 
 int avg(int n, const sf::Int16 arr[], int offset);
 void draw_wave(int n, int arr[]);
-void draw_array(int n, double arr[]);
+void draw_array(int n, double arr[], double bot[]);
+void draw_thirds(int n, double arr[]);
 int pixel(double wx, double w0, double w1, int p0, int p1);
 float lerp(float x1, float x2, float x);
 double catmull_rom(double a_y, double b_y, double c_y, double d_y, double t);
@@ -228,11 +229,16 @@ int main(int argc, char* argv[])
 
          fftw_execute(plan);
 
-         for (i = 0; i < n; ++i)
+         double f0 = 1.0/(n/88200.0);
+         double thirds[33] = {0.0};
+         for (i = 1; i < n/2; ++i)
          {
             out[i][0] *= 2.0/n;
             out[i][1] *= 2.0/n;
+            out[n-i-1][0] *= 2.0/n;
+            out[n-i-1][1] *= 2.0/n;
             processed[i] = out[i][0]*out[i][0] + out[i][1]*out[i][1];
+            processed[i] += out[n-i-1][0]*out[n-i-1][0] + out[n-i-1][1]*out[n-i-1][1];
             //processed[i] = powf(processed[i], 1.0/2.0)/60 * (i<pow(M_E, 3.0) ? (0.1*((float)i - pow(M_E, 3.0)) + 1) : log(pow((float)i, 1.0/3.0)));
             processed[i] = powf(processed[i], 1.0/2.0)/60 * (i<pow(M_E, 3.0) ? 1 : log(pow((float)i, 1.0/2.0)));
 //            processed[i] = 10.0/log(10.0) * log(processed[i] + 1e-5);
@@ -240,10 +246,100 @@ int main(int argc, char* argv[])
                processed[i] = 0.0;
 //            else if (processed[i] > 96.0)
 //               processed[i] = 96.0;
+
+            //double fm = n/2.0;
+            //if (i == n/2-1)
+            //  cout << i << "\t" << fm << endl;
+            int ith;
+            double ii = f0*i;
+            if (17780 < ii && ii <= 22390)
+              ith = 32;
+            else if (14130 < ii)
+              ith = 31;
+            else if (11220 < ii)
+              ith = 30;
+            else if (8913 < ii)
+              ith = 29;
+            else if (7079 < ii)
+              ith = 28;
+            else if (5623 < ii)
+              ith = 27;
+            else if (4467 < ii)
+              ith = 26;
+            else if (3548 < ii)
+              ith = 25;
+            else if (2818 < ii)
+              ith = 24;
+            else if (2239 < ii)
+              ith = 23;
+            else if (1778 < ii)
+              ith = 22;
+            else if (1413 < ii)
+              ith = 21;
+            else if (1122 < ii)
+              ith = 20;
+            else if (891 < ii)
+              ith = 19;
+            else if (708 < ii)
+              ith = 18;
+            else if (562 < ii)
+              ith = 17;
+            else if (447 < ii)
+              ith = 16;
+            else if (355 < ii)
+              ith = 15;
+            else if (282 < ii)
+              ith = 14;
+            else if (224 < ii)
+              ith = 13;
+            else if (178 < ii)
+              ith = 12;
+            else if (141 < ii)
+              ith = 11;
+            else if (112 < ii)
+              ith = 10;
+            else if (89.1 < ii)
+              ith = 9;
+            else if (70.8 < ii)
+              ith = 8;
+            else if (56.2 < ii)
+              ith = 7;
+            else if (44.7 < ii)
+              ith = 6;
+            else if (35.5 < ii)
+              ith = 5;
+            else if (28.2 < ii)
+              ith = 4;
+            else if (22.4 < ii)
+              ith = 3;
+            else if (17.8 < ii)
+              ith = 2;
+            else if (14.1 < ii)
+              ith = 1;
+            else // (11.2 < ii)
+              ith = 0;
+
+            if (11.2 < ii && ii <= 22390)
+              thirds[ith] += processed[i];
          }
 
-         double A = 40.0/(rate/n);
-         double r = pow(20000.0/A*n/rate, 1.0/f);
+         double tfreq[33] = {14.1,17.8,22.4,28.2,35.5,44.7,56.2,70.8,89.1,112,141,178,224,282,355,447,562,708,891,1122,1413,1778,2239,2818,3548,4467,5623,7079,8913,11220,14130,17780};
+
+         double dispth[f];
+         int j = 0;
+         for (int i=0; i < f; ++i)
+         {
+            int fi = f0*pow(20000.0/f0, (double)i/f);
+            while (j < 32 && fi > tfreq[j])
+              ++j;
+            dispth[i] = thirds[j];
+            //cout << j << endl;
+         }
+
+         double A = f0/(rate/n);
+         double r = pow(20000.0/(rate/n)/A, 1.0/f);
+         //double A = f0;
+         //double r = pow(20000.0/f0, 1.0/f);
          // n = A*r^f
          // r = (n/A)^(1/f)
          // 20000 = 20*r^1920
@@ -264,14 +360,18 @@ int main(int argc, char* argv[])
             }
 
             pre = A*pow(r, i0);
-            bef = max(pre-1, 0);;
-            nex = pre+1;
-            aft = nex+1;
+            bef = max(pre-1, 0);
+            nex = min(pre+1, n-1);
+            aft = min(nex+1, n-1);
+            //cout << pre << endl;
 
-            //display[i] = processed[pre];
-            //display[i] = lerp(processed[pre], processed[nex], (float)(i-i0)/(i1-i0));
-            display[i] = max(0.0,catmull_rom(processed[bef], processed[pre], processed[nex], processed[aft], (double)(i-i0)/(i1-i0)));
-            //cout << processed[bef] << "\t" << processed[pre] << "\t" << processed[nex] << "\t" << processed[aft] << "\t" << (float)(i-i0)/(i1-i0) << "\t" << display[i] << endl;
+            if (pre < n)
+            {
+               //display[i] = processed[pre];
+               //display[i] = lerp(processed[pre], processed[nex], (float)(i-i0)/(i1-i0));
+               display[i] = max(0.0,catmull_rom(processed[bef], processed[pre], processed[nex], processed[aft], (double)(i-i0)/(i1-i0)));
+               //cout << processed[bef] << "\t" << processed[pre] << "\t" << processed[nex] << "\t" << processed[aft] << "\t" << (float)(i-i0)/(i1-i0) << "\t" << display[i] << endl;
+            }
          }
       //cout << f << endl;
       //cout << n << endl;
@@ -279,8 +379,8 @@ int main(int argc, char* argv[])
          glClear(GL_COLOR_BUFFER_BIT);
          glMatrixMode(GL_MODELVIEW);
          glLoadIdentity();
+         draw_array(f, display, dispth);
          draw_wave(n<f/2?n:f/2, arr);
-         draw_array(f, display);
          glFlush();
          SDL_GL_SwapWindow(window);
       }
@@ -481,7 +581,7 @@ void draw_wave(int n, int arr[])
    glEnd();
 }
 
-void draw_array(int n, double arr[])
+void draw_array(int n, double arr[], double bot[])
 {
    int i; //y;
 
@@ -496,6 +596,9 @@ void draw_array(int n, double arr[])
       float R = 1.0/256.0*min(abs(max(abs(fmod((color_factor*i),1536)-768)-256,0.0)),256.0)*max(min(arr[i]/24.0, 1.0), 0.20);
       float G = 1.0/256.0*min(abs(max(abs(fmod((color_factor*i+1024),1536)-768)-256,0.0)),256.0)*max(min(arr[i]/24.0, 1.0), 0.20);
       float B = 1.0/256.0*min(abs(max(abs(fmod((color_factor*i+512),1536)-768)-256,0.0)),256.0)*max(min(arr[i]/24.0, 1.0), 0.20);
+      float r = 1.0/256.0*min(abs(max(abs(fmod((color_factor*i),1536)-768)-256,0.0)),256.0);
+      float g = 1.0/256.0*min(abs(max(abs(fmod((color_factor*i+1024),1536)-768)-256,0.0)),256.0);
+      float b = 1.0/256.0*min(abs(max(abs(fmod((color_factor*i+512),1536)-768)-256,0.0)),256.0);
    //   line0[1].color = sf::Color::White;
 //      line0[0].color = line0[1].color;
       //line0[0] = sf::Vertex(sf::Vector2f(2*Q*i+Q+j, S/3-(arr[i]*u)));
@@ -507,8 +610,110 @@ void draw_array(int n, double arr[])
       glColor3f(R,G,B);
       glVertex2f(i, S/3.0);
       glVertex2f(i, S/3.0);
-      glColor3f(0,0,0);
-      glVertex2f(i, S/3.0+(arr[i]*u/2));
+      glColor3f(r,g,b);
+      glVertex2f(i, S/3.0+(bot[i]*u/5));
+   }
+   glEnd();
+}
+
+void draw_thirds(int n, double arr[])
+{
+   int i; //y;
+
+   float u = S/300.0;
+
+   glBegin(GL_LINES);
+   for(i = 1; i < n; ++i)
+   {
+      int j;
+      double f0 = 1.0/(n/88200.0);
+      double ii = f0*i;
+      if (17780 < ii && ii <= 22390)
+        j = 32;
+      else if (14130 < ii)
+        j = 31;
+      else if (11220 < ii)
+        j = 30;
+      else if (8913 < ii)
+        j = 29;
+      else if (7079 < ii)
+        j = 28;
+      else if (5623 < ii)
+        j = 27;
+      else if (4467 < ii)
+        j = 26;
+      else if (3548 < ii)
+        j = 25;
+      else if (2818 < ii)
+        j = 24;
+      else if (2239 < ii)
+        j = 23;
+      else if (1778 < ii)
+        j = 22;
+      else if (1413 < ii)
+        j = 21;
+      else if (1122 < ii)
+        j = 20;
+      else if (891 < ii)
+        j = 19;
+      else if (708 < ii)
+        j = 18;
+      else if (562 < ii)
+        j = 17;
+      else if (447 < ii)
+        j = 16;
+      else if (355 < ii)
+        j = 15;
+      else if (282 < ii)
+        j = 14;
+      else if (224 < ii)
+        j = 13;
+      else if (178 < ii)
+        j = 12;
+      else if (141 < ii)
+        j = 11;
+      else if (112 < ii)
+        j = 10;
+      else if (89.1 < ii)
+        j = 9;
+      else if (70.8 < ii)
+        j = 8;
+      else if (56.2 < ii)
+        j = 7;
+      else if (44.7 < ii)
+        j = 6;
+      else if (35.5 < ii)
+        j = 5;
+      else if (28.2 < ii)
+        j = 4;
+      else if (22.4 < ii)
+        j = 3;
+      else if (17.8 < ii)
+        j = 2;
+      else if (14.1 < ii)
+        j = 1;
+      else // (11.2 < ii)
+        j = 0;
+
+      //if(arr[i] > 10.0)
+      //   printf("%f ", arr[i]);
+      float color_factor = 1920.0*3.0/4.0/W;
+      float R = 1.0/256.0*min(abs(max(abs(fmod((color_factor*i),1536)-768)-256,0.0)),256.0)*max(min(arr[j]/24.0, 1.0), 0.20);
+      float G = 1.0/256.0*min(abs(max(abs(fmod((color_factor*i+1024),1536)-768)-256,0.0)),256.0)*max(min(arr[j]/24.0, 1.0), 0.20);
+      float B = 1.0/256.0*min(abs(max(abs(fmod((color_factor*i+512),1536)-768)-256,0.0)),256.0)*max(min(arr[j]/24.0, 1.0), 0.20);
+   //   line0[1].color = sf::Color::White;
+//      line0[0].color = line0[1].color;
+      //line0[0] = sf::Vertex(sf::Vector2f(2*Q*i+Q+j, S/3-(arr[i]*u)));
+      //line0[0].color = line0[1].color;
+      //line0[1] = sf::Vertex(sf::Vector2f(2*Q*i+Q+j, S/3+(arr[i]*u/2)));
+      //line0[1].color = line0[0].color;
+      //glColor3f(0,0,0);
+      //glVertex2f(i, S/3.0-(arr[i]*u));
+      glColor3f(R,G,B);
+      //glVertex2f(i, S/3.0);
+      glVertex2f(i, S/3.0);
+      //glColor3f(0,0,0);
+      glVertex2f(i, S/3.0+(arr[j]*u/2));
    }
    glEnd();
 }
