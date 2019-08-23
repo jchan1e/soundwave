@@ -148,7 +148,8 @@ int main(int argc, char* argv[])
       SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
       window = SDL_CreateWindow("Soundwave", 0,0, W,S, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
       context = SDL_GL_CreateContext(window);
-      SDL_GL_SetSwapInterval(1);
+      if (SDL_GL_SetSwapInterval(1) < 0)
+        cout << "SDL could not set Vsync: " << SDL_GetError() << endl;
 
 
       rec.start(88200);
@@ -279,8 +280,8 @@ int main(int argc, char* argv[])
          glClear(GL_COLOR_BUFFER_BIT);
          glMatrixMode(GL_MODELVIEW);
          glLoadIdentity();
-         draw_wave(n<f/2?n:f/2, arr);
          draw_array(f, display);
+         draw_wave(n<f/2?n:f/2, arr);
          glFlush();
          SDL_GL_SwapWindow(window);
       }
