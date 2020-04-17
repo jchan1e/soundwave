@@ -11,13 +11,16 @@ LFLAGS=-L/usr/local/lib -lsfml-graphics -lsfml-audio -lsfml-window -lsfml-system
 CFLAGS=-Wall -g -O3 -std=c++11
 endif
 
-all: soundwave soundwave_gl soundwave-third-octave
+all: soundwave soundwave_gl soundwave-third-octave soundfall
 
 soundwave: soundwave.cpp
 	g++ $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 soundwave_gl: soundwaveGL.cpp
 	g++ $(CFLAGS) $(SFLAGS) $^ -o $@ $(LFLAGS) $(GFLAGS)
+
+soundfall: soundfall.cpp
+	g++ $(CFLAGS) -fopenmp $(SFLAGS) $^ -o $@ $(LFLAGS) -lgomp $(GFLAGS)
 
 soundwave-third-octave: soundwaveThird.cpp
 	g++ $(CFLAGS) $(SFLAGS) $^ -o $@ $(LFLAGS) $(GFLAGS)
@@ -29,4 +32,4 @@ Soundwavelet: Soundwavelet.o
 	nvcc -ccbin g++ -std=c++11 -m64 -gencode arch=compute_52,code=sm_52 -g -G -O3 -o $@ $^ $(LFLAGS)
 
 clean:
-	rm -rf soundwave soundwave_gl soundwave-third-octave *.o *.dSYM
+	rm -rf soundwave soundwave_gl soundwave-third-octave Soundwavelet soundfall *.o *.dSYM
