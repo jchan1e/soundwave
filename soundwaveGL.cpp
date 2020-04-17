@@ -233,9 +233,9 @@ int main(int argc, char* argv[])
          {
             out[i][0] *= 2.0/n;
             out[i][1] *= 2.0/n;
-            processed[i] = out[i][0]*out[i][0] + out[i][1]*out[i][1];
+            processed[i] = powf(out[i][0]*out[i][0] + out[i][1]*out[i][1], 0.5);
             //processed[i] = powf(processed[i], 1.0/2.0)/60 * (i<pow(M_E, 3.0) ? (0.1*((float)i - pow(M_E, 3.0)) + 1) : log(pow((float)i, 1.0/3.0)));
-            processed[i] = powf(processed[i], 1.0/2.0)/60 * (i<pow(M_E, 3.0) ? 1 : log(pow((float)i, 1.0/2.0)));
+            processed[i] = processed[i] / 60 * (i<pow(M_E, 3.0) ? 1 : log(pow((float)i, 0.5)));
 //            processed[i] = 10.0/log(10.0) * log(processed[i] + 1e-5);
             if (processed[i] < 0.0)
                processed[i] = 0.0;
