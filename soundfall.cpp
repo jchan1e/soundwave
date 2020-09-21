@@ -17,7 +17,7 @@ using namespace std;
 int W = 1920;   // window width
 int S = 1080;   // window height
 //const int N = W/Q;   // array size
-
+unsigned int frame;
 
 
 class myRec : public sf::SoundRecorder
@@ -104,8 +104,8 @@ public:
 int avg(int n, const sf::Int16 arr[], int offset);
 void draw_wave(int n, int arr[]);
 void draw_array(int n, double arr[]);
-void draw_map(int n, deque<float*> arr);
-void increment_map(int n, deque<float*>* arr, double* row);
+void draw_map();
+void increment_map(int n, double* row);
 int pixel(double wx, double w0, double w1, int p0, int p1);
 float lerp(float x1, float x2, float x);
 double catmull_rom(double a_y, double b_y, double c_y, double d_y, double t);
@@ -149,11 +149,21 @@ int main(int argc, char* argv[])
       rec.setDevice(rec.getAvailableDevices()[choice]);
 
       SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
-      window = SDL_CreateWindow("Soundwave", 0,0, W,S, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+      window = SDL_CreateWindow("Soundfall", 0,0, W,S, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
       context = SDL_GL_CreateContext(window);
       if (SDL_GL_SetSwapInterval(1) < 0)
         cout << "SDL could not set Vsync: " << SDL_GetError() << endl;
 
+      glGenTextures(1,&frame);
+      glBindTexture(GL_TEXTURE_2D,frame);
+      glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+
+      // Initialize map texture to black
+      glClear(GL_COLOR_BUFFER_BIT);
+      glCopyTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,0,0,W,S,0);
 
       rec.start(88200);
 
@@ -167,7 +177,7 @@ int main(int argc, char* argv[])
       double processed[n];
       double* display;
       //unsigned int v_size = S - S/3;
-      deque<float*> vec;
+      //deque<float*> vec;
 
       //double factor = rate/1000.0;
 
@@ -208,10 +218,10 @@ int main(int argc, char* argv[])
                //v_size = S-S/3;
                //free(display);
                //display = (double*)malloc(f*sizeof(double));
-               for (float* v : vec) {
-                 free(v);
-                 vec.pop_front();
-               }
+               //for (float* v : vec) {
+               //  free(v);
+               //  vec.pop_front();
+               //}
                glViewport(0,0, W,S);
                glMatrixMode(GL_PROJECTION);
                glLoadIdentity();
@@ -245,7 +255,7 @@ int main(int argc, char* argv[])
                out[i][1] *= 2.0/n;
                processed[i] = powf(out[i][0]*out[i][0] + out[i][1]*out[i][1], 0.5);
                //processed[i] = powf(processed[i], 1.0/2.0)/60 * (i<pow(M_E, 3.0) ? (0.1*((float)i - pow(M_E, 3.0)) + 1) : log(pow((float)i, 1.0/3.0)));
-               processed[i] = processed[i] / 60 * log(pow((float)i, 0.5));
+               processed[i] = processed[i] / 240 * sqrt((float)i);
 //               processed[i] = 10.0/log(10.0) * log(processed[i] + 1e-5);
                if (processed[i] < 0.0)
                   processed[i] = 0.0;
@@ -284,7 +294,7 @@ int main(int argc, char* argv[])
                display[i] = max(0.0,catmull_rom(processed[bef], processed[pre], processed[nex], processed[aft], (double)(i-i0)/(i1-i0)));
                //cout << processed[bef] << "\t" << processed[pre] << "\t" << processed[nex] << "\t" << processed[aft] << "\t" << (float)(i-i0)/(i1-i0) << "\t" << display[i] << endl;
             }
-            increment_map(f, &vec, display);
+            increment_map(f, display);
             //cout << vec.size() << endl;
          }
       //cout << f << endl;
@@ -299,7 +309,7 @@ int main(int argc, char* argv[])
          glClear(GL_COLOR_BUFFER_BIT);
          glMatrixMode(GL_MODELVIEW);
          glLoadIdentity();
-         draw_map(f, vec);
+         draw_map();
          draw_array(f, display);
          draw_wave(n<f/2?n:f/2, arr);
          glFlush();
@@ -514,68 +524,127 @@ void draw_array(int n, double arr[])
       //if(arr[i] > 10.0)
       //   printf("%f ", arr[i]);
       float color_factor = 1920.0*3.0/4.0/W;
-      float R = 1.0/256.0*min(abs(max(abs(fmod((color_factor*i     ),1536)-768)-256,0.0)),256.0)*max(min(arr[i]/48.0, 1.0), 0.20);
-      float G = 1.0/256.0*min(abs(max(abs(fmod((color_factor*i+1024),1536)-768)-256,0.0)),256.0)*max(min(arr[i]/48.0, 1.0), 0.20);
-      float B = 1.0/256.0*min(abs(max(abs(fmod((color_factor*i+512 ),1536)-768)-256,0.0)),256.0)*max(min(arr[i]/48.0, 1.0), 0.20);
-      //if (arr[i] > 48.0) {
-      //  R += (1.0-R) * (arr[i]-48.0)*0.5/48.0;
-      //  G += (1.0-G) * (arr[i]-48.0)*0.5/48.0;
-      //  B += (1.0-B) * (arr[i]-48.0)*0.5/48.0;
-      //}
-   //   line0[1].color = sf::Color::White;
-//      line0[0].color = line0[1].color;
-      //line0[0] = sf::Vertex(sf::Vector2f(2*Q*i+Q+j, S/3-(arr[i]*u)));
-      //line0[0].color = line0[1].color;
-      //line0[1] = sf::Vertex(sf::Vector2f(2*Q*i+Q+j, S/3+(arr[i]*u/2)));
-      //line0[1].color = line0[0].color;
-      glColor3f(0,0,0);
-      glVertex2f(i, S/3.0-(arr[i]*u));
-      glColor3f(R,G,B);
-      glVertex2f(i, S/3.0);
-      //glVertex2f(i, S/3.0);
-      //glColor3f(0,0,0);
-      //glVertex2f(i, S/3.0+(arr[i]*u/12));
+      float R = 1.0/256.0*min(abs(max(abs(fmod((color_factor*i     ),1536)-768)-256,0.0)),256.0)*max(min(arr[i]/48.0, 1.0), 0.15);
+      float G = 1.0/256.0*min(abs(max(abs(fmod((color_factor*i+1024),1536)-768)-256,0.0)),256.0)*max(min(arr[i]/48.0, 1.0), 0.15);
+      float B = 1.0/256.0*min(abs(max(abs(fmod((color_factor*i+512 ),1536)-768)-256,0.0)),256.0)*max(min(arr[i]/48.0, 1.0), 0.15);
+      if (arr[i] > 48.0) {
+         float R1 = R + (1.0-R) * (arr[i]-48.0)*0.5/48.0;
+         float G1 = G + (1.0-G) * (arr[i]-48.0)*0.5/48.0;
+         float B1 = B + (1.0-B) * (arr[i]-48.0)*0.5/48.0;
+
+         glColor3f(0,0,0);
+         glVertex2f(i, S/3.0-(arr[i]*u));
+         glColor3f(R,G,B);
+         glVertex2f(i, S/3.0-((arr[i]-48.0)*0.333*u));
+         glVertex2f(i, S/3.0-((arr[i]-48.0)*0.333*u));
+         glColor3f(R1,G1,B1);
+         glVertex2f(i, S/3.0);
+      }
+      else {
+   //      line0[1].color = sf::Color::White;
+//         line0[0].color = line0[1].color;
+         //line0[0] = sf::Vertex(sf::Vector2f(2*Q*i+Q+j, S/3-(arr[i]*u)));
+         //line0[0].color = line0[1].color;
+         //line0[1] = sf::Vertex(sf::Vector2f(2*Q*i+Q+j, S/3+(arr[i]*u/2)));
+         //line0[1].color = line0[0].color;
+         glColor3f(0,0,0);
+         glVertex2f(i, S/3.0-(arr[i]*u));
+         glColor3f(R,G,B);
+         glVertex2f(i, S/3.0);
+         //glVertex2f(i, S/3.0);
+         //glColor3f(0,0,0);
+         //glVertex2f(i, S/3.0+(arr[i]*u/12));
+      }
    }
    glEnd();
 }
 
-void increment_map(int n, deque<float*>* vec, double* row) {
+void increment_map(int n, double* row) {
    float color_factor = 1920.0*3.0/4.0/W;
    float* arr = (float*)malloc(n*3*sizeof(float));
    for (int i=0; i < n; ++i) {
       float R = 1.0/256.0*min(abs(max(abs(fmod((color_factor*i     ),1536)-768)-256,0.0)),256.0)*max(min(row[i]/48.0, 1.0), 0.0);
       float G = 1.0/256.0*min(abs(max(abs(fmod((color_factor*i+1024),1536)-768)-256,0.0)),256.0)*max(min(row[i]/48.0, 1.0), 0.0);
       float B = 1.0/256.0*min(abs(max(abs(fmod((color_factor*i+512 ),1536)-768)-256,0.0)),256.0)*max(min(row[i]/48.0, 1.0), 0.0);
-      if (arr[i] > 48.0) {
-        R += (1.0-R) * (arr[i]-48.0)*0.5/48.0;
-        G += (1.0-G) * (arr[i]-48.0)*0.5/48.0;
-        B += (1.0-B) * (arr[i]-48.0)*0.5/48.0;
+      if (row[i] > 48.0) {
+        R += (1.0-R) * (row[i]-48.0)*0.5/48.0;
+        G += (1.0-G) * (row[i]-48.0)*0.5/48.0;
+        B += (1.0-B) * (row[i]-48.0)*0.5/48.0;
       }
       arr[i*3+0] = R;
       arr[i*3+1] = G;
       arr[i*3+2] = B;
    }
-   vec->push_front(arr);
-   if ((int)vec->size() > S-S/3) {
-      float* a = (*vec)[vec->size()-1];
-      free(a);
-      vec->pop_back();
-   }
-}
+   //redraw map with offset
+   glClear(GL_COLOR_BUFFER_BIT);
+   glEnable(GL_TEXTURE_2D);
+   glBindTexture(GL_TEXTURE_2D,frame);
 
-void draw_map(int n, deque<float*> vec) {
-   int v_lim = min((int)vec.size(), S-S/3);
+   glBegin(GL_QUADS);
+   glTexCoord2f(0.0, 2.0/3.0);
+   glVertex2f(0.0, S/3+1);
+   glTexCoord2f(0.0, 1.0/W);
+   glVertex2f(0.0, S);
+   glTexCoord2f(1.0, 1.0/W);
+   glVertex2f(W, S);
+   glTexCoord2f(1.0, 2.0/3.0);
+   glVertex2f(W, S/3+1);
+   glEnd();
+   glDisable(GL_TEXTURE_2D);
+
+   //draw array into the gap
    glBegin(GL_POINTS);
-   for (int v=0; v < v_lim; ++v) {
-      for (int i=0; i < n; ++i) {
-         float R = vec[v][i*3+0];
-         float G = vec[v][i*3+1];
-         float B = vec[v][i*3+2];
-         glColor3f(R,G,B);
-         glVertex2f(i, v+S/3);
-      }
+   for (int i=0; i < n; ++i) {
+     float R = arr[i*3+0];
+     float G = arr[i*3+1];
+     float B = arr[i*3+2];
+     glColor3f(R,G,B);
+     glVertex2f(i, S/3+1);
    }
    glEnd();
+
+   //recapture texture
+   glFlush();
+   glCopyTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,0,0,W,S,0);
+
+   //vec->push_front(arr);
+   //if ((int)vec->size() > S-S/3) {
+   //   float* a = (*vec)[vec->size()-1];
+   //   free(a);
+   //   vec->pop_back();
+   //}
+}
+
+void draw_map() {
+   glEnable(GL_TEXTURE_2D);
+   glBindTexture(GL_TEXTURE_2D,frame);
+
+   glBegin(GL_QUADS);
+   glColor3f(1.0,1.0,1.0);
+   glTexCoord2f(0.0, 2.0/3.0);
+   glVertex2f(0.0, S/3);
+   glTexCoord2f(0.0, 0.0);
+   glVertex2f(0.0, S);
+   glTexCoord2f(1.0, 0.0);
+   glVertex2f(W, S);
+   glTexCoord2f(1.0, 2.0/3.0);
+   glVertex2f(W, S/3);
+   glEnd();
+
+   glDisable(GL_TEXTURE_2D);
+
+   //int v_lim = min((int)vec.size(), S-S/3);
+   //glBegin(GL_POINTS);
+   //for (int v=0; v < v_lim; ++v) {
+   //   for (int i=0; i < n; ++i) {
+   //      float R = vec[v][i*3+0];
+   //      float G = vec[v][i*3+1];
+   //      float B = vec[v][i*3+2];
+   //      glColor3f(R,G,B);
+   //      glVertex2f(i, v+S/3);
+   //   }
+   //}
+   //glEnd();
 }
 
 int pixel(double wx, double w0, double w1, int p0, int p1)
