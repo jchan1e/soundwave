@@ -179,6 +179,8 @@ int main(int argc, char* argv[])
       //unsigned int v_size = S - S/3;
       //deque<float*> vec;
 
+      display = (double*)malloc(f*sizeof(double));
+
       //double factor = rate/1000.0;
 
       double *in;
@@ -216,8 +218,8 @@ int main(int argc, char* argv[])
                S = event.window.data2;
                f = W;
                //v_size = S-S/3;
-               //free(display);
-               //display = (double*)malloc(f*sizeof(double));
+               free(display);
+               display = (double*)malloc(f*sizeof(double));
                //for (float* v : vec) {
                //  free(v);
                //  vec.pop_front();
@@ -241,8 +243,6 @@ int main(int argc, char* argv[])
                glCopyTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,0,0,W,S,0);
             }
          }
-
-         display = (double*)malloc(f*sizeof(double));
 
          if (rec.getChanged())
          {
@@ -328,7 +328,7 @@ int main(int argc, char* argv[])
       }
 
       rec.stop();
-      //free(display);
+      free(display);
       fftw_destroy_plan(plan);
       fftw_free(in);
       fftw_free(out);
@@ -618,12 +618,7 @@ void increment_map(int n, double* row) {
    glFlush();
    glCopyTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,0,0,W,S,0);
 
-   //vec->push_front(arr);
-   //if ((int)vec->size() > S-S/3) {
-   //   float* a = (*vec)[vec->size()-1];
-   //   free(a);
-   //   vec->pop_back();
-   //}
+   free(arr);
 }
 
 void draw_map() {
