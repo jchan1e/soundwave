@@ -228,6 +228,17 @@ int main(int argc, char* argv[])
                glOrtho(0,W, S,0, -1,1);
                glMatrixMode(GL_MODELVIEW);
                glLoadIdentity();
+
+               glDeleteTextures(1,&frame);
+               glGenTextures(1,&frame);
+               glBindTexture(GL_TEXTURE_2D,frame);
+               glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+               glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+               glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+               glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+
+               glClear(GL_COLOR_BUFFER_BIT);
+               glCopyTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,0,0,W,S,0);
             }
          }
 
