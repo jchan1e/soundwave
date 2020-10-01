@@ -594,9 +594,9 @@ void increment_map(int n, double* row) {
    glBegin(GL_QUADS);
    glTexCoord2f(0.0, 2.0/3.0);
    glVertex2f(0.0, S/3+1);
-   glTexCoord2f(0.0, 1.0/W);
+   glTexCoord2f(0.0, 1.0/S);
    glVertex2f(0.0, S);
-   glTexCoord2f(1.0, 1.0/W);
+   glTexCoord2f(1.0, 1.0/S);
    glVertex2f(W, S);
    glTexCoord2f(1.0, 2.0/3.0);
    glVertex2f(W, S/3+1);
